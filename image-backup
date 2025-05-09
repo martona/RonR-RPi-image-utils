@@ -87,6 +87,7 @@ usage()
   errexit "Usage: $0 [options] [pathto/imagefile for incremental backup]\n\
 -h,--help       This usage description\n\
 -i,--initial    pathto/filename of image file [,inital size MB [,added space for incremental MB]]\n\
+-r,--noresize   Skip resize2fs/shrink/truncate after initial image creation
 -n,--noexpand   Do not expand filesystem on first run after restore\n\
 -o,--options    Additional rsync options (comma separated)\n\
 -u,--ubuntu     Ubuntu (Deprecated)\n\
@@ -185,6 +186,7 @@ EOF1
 
 LOOP=""
 MNTED=FALSE
+NORESIZE=FALSE
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 if [ $(id -u) -ne 0 ]; then
   errexit "$0 must be run as root user"
@@ -267,6 +269,11 @@ while [ $# -gt 0 ]; do
       IMGSIZE=${INITIAL[1]}
       IMGINCR=${INITIAL[2]}
       shift 2
+      ;;
+
+    -r|--noresize)
+      NORESIZE=TRUE
+      shift
       ;;
 
     -n|--noexpand)
@@ -431,7 +438,7 @@ EOF
   echo ""
   echo "Starting full backup (for incremental backups, run: $0 ${IMGFILE})"
   backup
-  if [ "${ROOT_TYPE}" != "f2fs" ]; then
+  if [ "${ROOT_TYPE}" != "f2fs" ] && [ "${NORESIZE}" != "TRUE" ]; then
     echo ""
     mkloop
     e2fsck -f -n "${LOOP}p2"
